@@ -8,6 +8,47 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        />
+        android:text="@string/btn_play"
+        android:id="@+id/btnPlay" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_stop"
+        android:id="@+id/btnStop"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_rec"
+        android:id="@+id/btnRec"/>
+
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="25dp"
+        android:layout_marginTop="25dp"
+        android:background="#e2fbff"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/rbMusic1"
+            android:layout_marginLeft="25dp"
+            android:layout_marginRight="25dp"
+            android:background="#e2fbff"
+            android:text="@string/rb_music1"/>
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/rbMusic2"
+            android:background="#e2fbff"
+            android:text="@string/rb_music2"/>
+
+
+
+    </RadioGroup>
 
 </LinearLayout>

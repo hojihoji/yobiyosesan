@@ -2,6 +2,7 @@
     <string name="app_name">呼び寄せさん</string>
     <string name="btn_play">再生</string>
     <string name="btn_stop">停止</string>
+    <string name="btn_rec">録音</string>
     <string name="rb_music1">サウンド1</string>
     <string name="rb_music2">サウンド2</string>
 
