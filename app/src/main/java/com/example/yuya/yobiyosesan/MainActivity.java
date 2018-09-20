@@ -1,15 +1,22 @@
 package com.example.yuya.yobiyosesan;
 
+import android.content.res.AssetFileDescriptor;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    MediaPlayer mp = null;
+import java.io.IOException;
+
+public class MainActivity extends AppCompatActivity{
     Button play_button;
     Button stop_button;
+    MediaPlayer mediaPlayer;
 
 
     @Override
@@ -17,13 +24,91 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mp = MediaPlayer.create(this, R.raw.sample);
 
+        //音楽再生
         play_button = (Button) findViewById(R.id.btnPlay);
-        play_button.setOnClickListener(this);
+        play_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                audioPlay();
+            }
+        });
+
+        //音楽停止
+        stop_button = (Button) findViewById(R.id.btnStop);
+        stop_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                audioStop();
+            }
+        });
     }
 
-    public void onClick(View v){
+    private boolean audioSetup(){
+        boolean fileCheck = false;
+
+        //インスタンスを生成
+        mediaPlayer = new MediaPlayer();
+
+        //音楽名、あるいはパス
+
+        String filepath = "music.mp3";
+
+        //assetsからmp3ファイルを読み込み
+        try(AssetFileDescriptor afdescripter = getAssets().openFd(filepath);){
+
+            //MediaPlayerに読み込んだ音楽ファイルを指定
+            mediaPlayer.setDataSource(afdescripter.getFileDescriptor(),
+                    afdescripter.getStartOffset(),afdescripter.getLength());
+
+            //音量調整を端末のボタンで行えるようにする
+            setVolumeControlStream(AudioManager.STREAM_MUSIC);
+            mediaPlayer.prepare();
+            fileCheck = true;
+        }catch (IOException el){
+            el.printStackTrace();
+        }
+
+        return fileCheck;
+    }
+
+    private void audioPlay(){
+        if(mediaPlayer == null){
+            //audioファイルを読み出し
+            if(audioSetup()){
+                Toast.makeText(getApplication(), "Reload audio file", Toast.LENGTH_SHORT).show();
+            }else{
+                Toast.makeText(getApplication(), "Error: Cannot Read audio file", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }else{
+            //繰り返し再生する
+            mediaPlayer.stop();
+            mediaPlayer.reset();
+            //リソース解放
+            mediaPlayer.release();
+        }
+
+        //再生する
+        mediaPlayer.start();
+        //終了を検知するリスナー
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                Log.d("debug","end of audio");
+                audioStop();
+            }
+        });
+    }
+
+    private void audioStop(){
+        //再生終了
+        mediaPlayer.stop();
+        //リセット
+        mediaPlayer.reset();
+        //リソース解放
+        mediaPlayer.release();
+        mediaPlayer = null;
 
     }
 
