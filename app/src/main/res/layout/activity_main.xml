@@ -29,7 +29,8 @@
         android:layout_marginBottom="25dp"
         android:layout_marginTop="25dp"
         android:background="#e2fbff"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:id="@+id/rbGroup">
 
         <RadioButton
             android:layout_width="wrap_content"

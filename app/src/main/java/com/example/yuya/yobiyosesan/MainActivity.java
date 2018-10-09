@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -17,6 +19,8 @@ public class MainActivity extends AppCompatActivity{
     Button play_button;
     Button stop_button;
     MediaPlayer mediaPlayer;
+    String mFilepath;
+
 
 
     @Override
@@ -24,6 +28,36 @@ public class MainActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //ラジオボタンの初期設定
+        RadioGroup rbGroup = (RadioGroup) findViewById(R.id.rbGroup);
+        rbGroup.check(R.id.rbMusic1);
+        mFilepath = "music1.mp3";
+
+        //ラジオボタンのリスナー
+        rbGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int checkedId) {
+                RadioButton radioButton =(RadioButton)findViewById(checkedId);
+                boolean checked = radioButton.isChecked();
+                switch (radioButton.getId()){
+                    case R.id.rbMusic1:
+                        if(checked){
+                            mFilepath = "music1.mp3";
+                            Toast.makeText(getApplication(), "音楽１が選択されました", Toast.LENGTH_SHORT).show();
+                        }
+                        break;
+                    case R.id.rbMusic2:
+                        if(checked){
+                            mFilepath = "music2.mp3";
+                            Toast.makeText(getApplication(), "音楽２が選択されました", Toast.LENGTH_SHORT).show();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
+        //int rbId = rbGroup.getCheckedRadioButtonId();
 
         //音楽再生
         play_button = (Button) findViewById(R.id.btnPlay);
@@ -51,11 +85,11 @@ public class MainActivity extends AppCompatActivity{
         mediaPlayer = new MediaPlayer();
 
         //音楽名、あるいはパス
+        //String filepath = "music1.mp3";
 
-        String filepath = "music.mp3";
 
         //assetsからmp3ファイルを読み込み
-        try(AssetFileDescriptor afdescripter = getAssets().openFd(filepath);){
+        try(AssetFileDescriptor afdescripter = getAssets().openFd(mFilepath);){
 
             //MediaPlayerに読み込んだ音楽ファイルを指定
             mediaPlayer.setDataSource(afdescripter.getFileDescriptor(),
@@ -87,8 +121,11 @@ public class MainActivity extends AppCompatActivity{
             mediaPlayer.reset();
             //リソース解放
             mediaPlayer.release();
+            audioSetup();
         }
 
+        //ループ再生にする
+        mediaPlayer.setLooping(true);
         //再生する
         mediaPlayer.start();
         //終了を検知するリスナー
