@@ -57,7 +57,6 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
         });
-        //int rbId = rbGroup.getCheckedRadioButtonId();
 
         //音楽再生
         play_button = (Button) findViewById(R.id.btnPlay);
@@ -84,16 +83,12 @@ public class MainActivity extends AppCompatActivity{
         //インスタンスを生成
         mediaPlayer = new MediaPlayer();
 
-        //音楽名、あるいはパス
-        //String filepath = "music1.mp3";
-
-
         //assetsからmp3ファイルを読み込み
-        try(AssetFileDescriptor afdescripter = getAssets().openFd(mFilepath);){
+        try(AssetFileDescriptor assetFileDescriptor = getAssets().openFd(mFilepath);){
 
             //MediaPlayerに読み込んだ音楽ファイルを指定
-            mediaPlayer.setDataSource(afdescripter.getFileDescriptor(),
-                    afdescripter.getStartOffset(),afdescripter.getLength());
+            mediaPlayer.setDataSource(assetFileDescriptor.getFileDescriptor(),
+                    assetFileDescriptor.getStartOffset(),assetFileDescriptor.getLength());
 
             //音量調整を端末のボタンで行えるようにする
             setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -139,13 +134,16 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void audioStop(){
-        //再生終了
-        mediaPlayer.stop();
-        //リセット
-        mediaPlayer.reset();
-        //リソース解放
-        mediaPlayer.release();
-        mediaPlayer = null;
+        if(mediaPlayer !=null){
+            //再生終了
+            mediaPlayer.stop();
+            //リセット
+            mediaPlayer.reset();
+            //リソース解放
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+
 
     }
 
