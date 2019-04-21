@@ -3,7 +3,6 @@ package com.example.yuya.yobiyosesan;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,15 +10,18 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity{
-    Button play_button;
-    Button stop_button;
-    MediaPlayer mediaPlayer;
+    Button mPlay_button;
+    Button mStop_button;
+    MediaPlayer mMediaPlayer;
     String mFilepath;
+    SeekBar mSeekBar;
+    Runnable mRunnable;
 
 
 
@@ -32,6 +34,9 @@ public class MainActivity extends AppCompatActivity{
         RadioGroup rbGroup = (RadioGroup) findViewById(R.id.rbGroup);
         rbGroup.check(R.id.rbMusic1);
         mFilepath = "music1.mp3";
+
+        //シークバーの初期設定
+        mSeekBar = (SeekBar)findViewById(R.id.seekBar);
 
         //ラジオボタンのリスナー
         rbGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -59,8 +64,8 @@ public class MainActivity extends AppCompatActivity{
         });
 
         //音楽再生
-        play_button = (Button) findViewById(R.id.btnPlay);
-        play_button.setOnClickListener(new View.OnClickListener() {
+        mPlay_button = (Button) findViewById(R.id.btnPlay);
+        mPlay_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 audioPlay();
@@ -68,8 +73,8 @@ public class MainActivity extends AppCompatActivity{
         });
 
         //音楽停止
-        stop_button = (Button) findViewById(R.id.btnStop);
-        stop_button.setOnClickListener(new View.OnClickListener() {
+        mStop_button = (Button) findViewById(R.id.btnStop);
+        mStop_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 audioStop();
@@ -81,18 +86,21 @@ public class MainActivity extends AppCompatActivity{
         boolean fileCheck = false;
 
         //インスタンスを生成
-        mediaPlayer = new MediaPlayer();
+        mMediaPlayer = new MediaPlayer();
 
         //assetsからmp3ファイルを読み込み
         try(AssetFileDescriptor assetFileDescriptor = getAssets().openFd(mFilepath);){
 
             //MediaPlayerに読み込んだ音楽ファイルを指定
-            mediaPlayer.setDataSource(assetFileDescriptor.getFileDescriptor(),
+            mMediaPlayer.setDataSource(assetFileDescriptor.getFileDescriptor(),
                     assetFileDescriptor.getStartOffset(),assetFileDescriptor.getLength());
 
             //音量調整を端末のボタンで行えるようにする
             setVolumeControlStream(AudioManager.STREAM_MUSIC);
-            mediaPlayer.prepare();
+            mMediaPlayer.prepare();
+            //音楽に合わせ、シークバーの上限値を設定
+            mSeekBar.setMax(mMediaPlayer.getDuration());
+
             fileCheck = true;
         }catch (IOException el){
             el.printStackTrace();
@@ -102,7 +110,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void audioPlay(){
-        if(mediaPlayer == null){
+        if(mMediaPlayer == null){
             //audioファイルを読み出し
             if(audioSetup()){
                 Toast.makeText(getApplication(), "Reload audio file", Toast.LENGTH_SHORT).show();
@@ -112,19 +120,38 @@ public class MainActivity extends AppCompatActivity{
             }
         }else{
             //繰り返し再生する
-            mediaPlayer.stop();
-            mediaPlayer.reset();
+            mMediaPlayer.stop();
+            mMediaPlayer.reset();
             //リソース解放
-            mediaPlayer.release();
+            mMediaPlayer.release();
             audioSetup();
         }
 
         //ループ再生にする
-        mediaPlayer.setLooping(true);
+        mMediaPlayer.setLooping(true);
         //再生する
-        mediaPlayer.start();
+        mMediaPlayer.start();
+        //シークバー
+        changeSeekBar();
+        mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mMediaPlayer.seekTo(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
         //終了を検知するリスナー
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+        mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
                 Log.d("debug","end of audio");
@@ -134,17 +161,32 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void audioStop(){
-        if(mediaPlayer !=null){
+        if(mMediaPlayer !=null){
             //再生終了
-            mediaPlayer.stop();
+            mMediaPlayer.stop();
             //リセット
-            mediaPlayer.reset();
+            mMediaPlayer.reset();
             //リソース解放
-            mediaPlayer.release();
-            mediaPlayer = null;
+            mMediaPlayer.release();
+            mMediaPlayer = null;
         }
 
 
+    }
+
+    private void changeSeekBar(){
+        mSeekBar.setProgress(mMediaPlayer.getCurrentPosition());
+        if(mMediaPlayer.isPlaying()){
+            mRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    changeSeekBar();
+                    String position = Integer.toString(mMediaPlayer.getCurrentPosition());
+                    Log.d("position",position);
+                }
+            };
+
+        }
     }
 
 }
