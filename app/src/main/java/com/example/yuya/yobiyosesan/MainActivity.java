@@ -3,6 +3,7 @@ package com.example.yuya.yobiyosesan;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,6 +23,7 @@ public class MainActivity extends AppCompatActivity{
     String mFilepath;
     SeekBar mSeekBar;
     Runnable mRunnable;
+    Handler mHandler= new Handler();
 
 
 
@@ -136,7 +138,9 @@ public class MainActivity extends AppCompatActivity{
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mMediaPlayer.seekTo(progress);
+                if(fromUser){
+                    mMediaPlayer.seekTo(progress);
+                }
             }
 
             @Override
@@ -175,17 +179,18 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void changeSeekBar(){
-        mSeekBar.setProgress(mMediaPlayer.getCurrentPosition());
-        if(mMediaPlayer.isPlaying()){
-            mRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    changeSeekBar();
-                    String position = Integer.toString(mMediaPlayer.getCurrentPosition());
-                    Log.d("position",position);
-                }
-            };
-
+        if(mMediaPlayer!=null){
+            mSeekBar.setProgress(mMediaPlayer.getCurrentPosition());
+            if(mMediaPlayer.isPlaying()){
+                mRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        changeSeekBar();
+                        Toast.makeText(getApplication(),"Change Seek Bar Method called again",Toast.LENGTH_LONG).show();
+                    }
+                };
+                mHandler.postDelayed(mRunnable,1000);
+            }
         }
     }
 
