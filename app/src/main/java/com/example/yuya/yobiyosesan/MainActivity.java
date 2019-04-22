@@ -1,8 +1,13 @@
 package com.example.yuya.yobiyosesan;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.MediaRecorder;
+import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,11 +24,17 @@ import java.io.IOException;
 public class MainActivity extends AppCompatActivity{
     Button mPlay_button;
     Button mStop_button;
+    Button mRecord_button;
     MediaPlayer mMediaPlayer;
+    MediaRecorder mMediaRecorder;
     String mFilepath;
     SeekBar mSeekBar;
     Runnable mRunnable;
     Handler mHandler= new Handler();
+
+    final int PERMISSION_REQUEST_CODE = 100;
+
+    int mRecStatus = 0;
 
 
 
@@ -82,10 +93,24 @@ public class MainActivity extends AppCompatActivity{
                 audioStop();
             }
         });
+
+        //音声録音
+        mRecord_button = (Button)findViewById(R.id.btnRec);
+        mRecord_button.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                audioRec();
+            }
+
+        });
+
     }
 
     private boolean audioSetup(){
         boolean fileCheck = false;
+
+        //音楽再生中は録音ボタンを無効にする
+        mRecord_button.setEnabled(false);
 
         //インスタンスを生成
         mMediaPlayer = new MediaPlayer();
@@ -173,10 +198,68 @@ public class MainActivity extends AppCompatActivity{
             //リソース解放
             mMediaPlayer.release();
             mMediaPlayer = null;
+
+            //音楽停止の際に録音ボタンを有効にする
+            mRecord_button.setEnabled(true);
         }
 
 
     }
+
+    private void audioRec() {
+        //パーミッション
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+            //外部ストレージアクセスのパーミッション
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                Log.d("PERMISSION", "外部ストレージアクセスは許可されている");
+            } else {
+                Log.d("PERMISSION", "外部ストレージアクセスは許可されていない");
+                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+            }
+
+            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                Log.d("PERMISSION", "レコードオーディオは許可されている");
+            } else {
+                Log.d("PERMISSION", "レコードオーディオは許可されていない");
+                requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
+            }
+
+
+            if (mMediaPlayer == null) {
+                switch (mRecStatus) {
+                    case 0:
+                        mRecStatus = 1;
+                        mRecord_button.setText("録音停止");
+                        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AAC_ADTS);
+                        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+
+                        //保存先を指定
+                        String filePath = Environment.getExternalStorageDirectory() + "/voice.aac";
+                        mMediaRecorder.setOutputFile(filePath);
+
+                        //録音準備
+                        try {
+                            mMediaRecorder.prepare();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        mMediaRecorder.start();
+                    case 1:
+                        mRecStatus = 0;
+                        mRecord_button.setText("録音");
+                        mMediaRecorder.stop();
+                        mMediaRecorder.reset();
+                        mMediaRecorder.release();
+                        mMediaRecorder = null;
+                }
+
+
+            }
+        }
+    }
+
 
     private void changeSeekBar(){
         if(mMediaPlayer!=null){
