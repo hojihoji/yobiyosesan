@@ -9,6 +9,7 @@ import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -43,7 +44,16 @@ public class MainActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //ラジオボタンの初期設定
+        //パーミッション
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+            //外部ストレージアクセスのパーミッション
+            String[] PERMISSION = {Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.RECORD_AUDIO};
+            ActivityCompat.requestPermissions(MainActivity.this,PERMISSION,PERMISSION_REQUEST_CODE);
+        }
+
+
+            //ラジオボタンの初期設定
         RadioGroup rbGroup = (RadioGroup) findViewById(R.id.rbGroup);
         rbGroup.check(R.id.rbMusic1);
         mFilepath = "music1.mp3";
@@ -208,55 +218,41 @@ public class MainActivity extends AppCompatActivity{
 
     private void audioRec() {
         //パーミッション
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 
-            //外部ストレージアクセスのパーミッション
-            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                Log.d("PERMISSION", "外部ストレージアクセスは許可されている");
-            } else {
-                Log.d("PERMISSION", "外部ストレージアクセスは許可されていない");
-                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+
+        if (mMediaPlayer == null) {
+            switch (mRecStatus) {
+                case 0:
+                    mRecStatus = 1;
+                    mRecord_button.setText("録音停止");
+                    mMediaRecorder = new MediaRecorder();
+                    mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                    mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+                    mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+
+                    //保存先を指定
+                    String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/voice.3gp";
+                    mMediaRecorder.setOutputFile(filePath);
+
+                    //録音準備
+                    try {
+                        mMediaRecorder.prepare();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    mMediaRecorder.start();
+                    break;
+                case 1:
+                    mRecStatus = 0;
+                    mRecord_button.setText("録音");
+                    mMediaRecorder.stop();
+                    mMediaRecorder.reset();
+                    mMediaRecorder.release();
+                    mMediaRecorder = null;
+                    break;
             }
 
-            if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                Log.d("PERMISSION", "レコードオーディオは許可されている");
-            } else {
-                Log.d("PERMISSION", "レコードオーディオは許可されていない");
-                requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
-            }
 
-
-            if (mMediaPlayer == null) {
-                switch (mRecStatus) {
-                    case 0:
-                        mRecStatus = 1;
-                        mRecord_button.setText("録音停止");
-                        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AAC_ADTS);
-                        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-
-                        //保存先を指定
-                        String filePath = Environment.getExternalStorageDirectory() + "/voice.aac";
-                        mMediaRecorder.setOutputFile(filePath);
-
-                        //録音準備
-                        try {
-                            mMediaRecorder.prepare();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        mMediaRecorder.start();
-                    case 1:
-                        mRecStatus = 0;
-                        mRecord_button.setText("録音");
-                        mMediaRecorder.stop();
-                        mMediaRecorder.reset();
-                        mMediaRecorder.release();
-                        mMediaRecorder = null;
-                }
-
-
-            }
         }
     }
 
@@ -273,6 +269,30 @@ public class MainActivity extends AppCompatActivity{
                     }
                 };
                 mHandler.postDelayed(mRunnable,1000);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,String[]permissions,int[]grantResults){
+        if(requestCode == PERMISSION_REQUEST_CODE){
+            if(grantResults.length>0){
+                for(int i = 0; i < permissions.length;i++){
+                    if(permissions[i].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+                        if(grantResults[i]==PackageManager.PERMISSION_GRANTED){
+                            Log.d("PERMISSION","外部ストレージアクセスを許可");
+                        }else {
+                            Log.d("PERMISSIONS","外部ストレージアクセスを非許可");
+                        }
+
+                    }else if(permissions[i].equals(Manifest.permission.RECORD_AUDIO)){
+                        if(grantResults[i]==PackageManager.PERMISSION_GRANTED){
+                            Log.d("PERMISSION","録音を許可");
+                        }else {
+                            Log.d("PERMISSIONS","録音を非許可");
+                        }
+                    }
+                }
             }
         }
     }
